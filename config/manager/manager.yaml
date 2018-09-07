@@ -18,7 +18,7 @@ spec:
     control-plane: controller-manager
     controller-tools.k8s.io: "1.0"
   ports:
-  - port: 443
+  - port: 7890 # not use 443 here, save it for webhook.
 ---
 apiVersion: apps/v1
 kind: StatefulSet

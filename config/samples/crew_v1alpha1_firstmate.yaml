@@ -4,6 +4,6 @@ metadata:
   labels:
     controller-tools.k8s.io: "1.0"
   name: firstmate-sample
-spec:
+spec: {}
   # Add fields here
-  foo: notbar
+#  foo: notbar
