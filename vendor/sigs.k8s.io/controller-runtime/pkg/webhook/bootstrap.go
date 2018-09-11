@@ -19,10 +19,12 @@ package webhook
 import (
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
+	"strconv"
 
 	"github.com/ghodss/yaml"
 
@@ -31,6 +33,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -62,9 +65,6 @@ func (s *Server) setServerDefault() {
 	if len(s.CertDir) == 0 {
 		s.CertDir = path.Join("k8s-webhook-server", "cert")
 	}
-	if s.KVMap == nil {
-		s.KVMap = map[string]interface{}{}
-	}
 
 	if s.Client == nil {
 		cfg, err := config.GetConfig()
@@ -91,11 +91,6 @@ func (s *Server) setBootstrappingDefault() {
 	if s.Host == nil && s.Service == nil {
 		varString := "localhost"
 		s.Host = &varString
-	}
-	// Override the user's setting to use port 443 until
-	// https://github.com/kubernetes/kubernetes/issues/67468 is resolved.
-	if s.Service != nil && s.Port != 443 {
-		s.Port = 443
 	}
 
 	var certWriter writer.CertWriter
@@ -194,7 +189,7 @@ func (s *Server) getClientConfig() (*admissionregistration.WebhookClientConfig, 
 	if s.Host != nil {
 		u := url.URL{
 			Scheme: "https",
-			Host:   *s.Host,
+			Host:   net.JoinHostPort(*s.Host, strconv.Itoa(int(s.Port))),
 		}
 		urlString := u.String()
 		cc.URL = &urlString
@@ -339,7 +334,7 @@ func (s *Server) admissionWebhook(path string, wh *admission.Webhook) (*admissio
 }
 
 // service creates a corev1.service object fronting the admission server.
-func (s *Server) service() *corev1.Service {
+func (s *Server) service() runtime.Object {
 	if s.Service == nil {
 		return nil
 	}
@@ -356,7 +351,9 @@ func (s *Server) service() *corev1.Service {
 			Selector: s.Service.Selectors,
 			Ports: []corev1.ServicePort{
 				{
-					Port: s.Port,
+					// When using service, kube-apiserver will send admission request to port 443.
+					Port:       443,
+					TargetPort: intstr.IntOrString{Type: intstr.Int, IntVal: s.Port},
 				},
 			},
 		},

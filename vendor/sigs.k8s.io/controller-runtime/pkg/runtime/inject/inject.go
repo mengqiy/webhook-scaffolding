@@ -60,8 +60,8 @@ type Client interface {
 	InjectClient(client.Client) error
 }
 
-// ClientInto will set client on i and return the result if it implements client.  Returns
-//// false if i does not implement client.
+// ClientInto will set client on i and return the result if it implements Client. Returns
+// false if i does not implement Client.
 func ClientInto(client client.Client, i interface{}) (bool, error) {
 	if s, ok := i.(Client); ok {
 		return true, s.InjectClient(client)
@@ -69,14 +69,13 @@ func ClientInto(client client.Client, i interface{}) (bool, error) {
 	return false, nil
 }
 
-// Decoder is used by the ControllerManager to inject client into Sources, EventHandlers, Predicates, and
-// Reconciles
+// Decoder is used by the ControllerManager to inject decoder into webhook handlers.
 type Decoder interface {
 	InjectDecoder(types.Decoder) error
 }
 
-// DecoderInto will set client on i and return the result if it implements client.  Returns
-//// false if i does not implement client.
+// DecoderInto will set decoder on i and return the result if it implements Decoder.  Returns
+// false if i does not implement Decoder.
 func DecoderInto(decoder types.Decoder, i interface{}) (bool, error) {
 	if s, ok := i.(Decoder); ok {
 		return true, s.InjectDecoder(decoder)

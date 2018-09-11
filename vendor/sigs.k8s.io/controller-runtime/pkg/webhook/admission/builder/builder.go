@@ -31,33 +31,40 @@ import (
 
 // WebhookBuilder builds a webhook based on the provided options.
 type WebhookBuilder struct {
-	// name specifies the Name of the webhook. It must be unique in the http
-	// server that serves all the webhooks.
+	// name specifies the name of the webhook. It must be unique among all webhooks.
 	name string
 
-	// path is the URL Path to register this webhook. e.g. "/feature-foo-mutating-pods".
+	// path is the URL Path to register this webhook. e.g. "/mutate-pods".
 	path string
 
-	// handlers are handlers for handling admission request.
+	// handlers handle admission requests.
+	// A WebhookBuilder may have multiple handlers.
+	// For example, handlers[0] mutates a pod for feature foo.
+	// handlers[1] mutates a pod for a different feature bar.
 	handlers []admission.Handler
 
-	// t specifies the type of the webhook
+	// t specifies the type of the webhook.
+	// Currently, Mutating and Validating are supported.
 	t *types.WebhookType
+
+	// operations define the operations this webhook cares.
 	// only one of operations and Rules can be set.
 	operations []admissionregistrationv1beta1.OperationType
-
-	// resources that this webhook cares.
+	// apiType represents the resource that this webhook cares.
 	// Only one of apiType and Rules can be set.
 	apiType runtime.Object
-	rules   []admissionregistrationv1beta1.RuleWithOperations
+	// rules contain a list of admissionregistrationv1beta1.RuleWithOperations
+	// It overrides operations and apiType.
+	rules []admissionregistrationv1beta1.RuleWithOperations
 
-	// This field maps to the FailurePolicy in the admissionregistrationv1beta1.Webhook
+	// failurePolicy maps to the FailurePolicy in the admissionregistrationv1beta1.Webhook
 	failurePolicy *admissionregistrationv1beta1.FailurePolicyType
 
-	// This field maps to the NamespaceSelector in the admissionregistrationv1beta1.Webhook
+	// namespaceSelector maps to the NamespaceSelector in the admissionregistrationv1beta1.Webhook
 	namespaceSelector *metav1.LabelSelector
 
 	// manager is the manager for the webhook.
+	// It is used for provisioning various dependencies for the webhook. e.g. RESTMapper.
 	manager manager.Manager
 }
 
@@ -66,22 +73,34 @@ func NewWebhookBuilder() *WebhookBuilder {
 	return &WebhookBuilder{}
 }
 
-// Name sets the Name of the webhook.
+// Name sets the name of the webhook.
 // This is optional
 func (b *WebhookBuilder) Name(name string) *WebhookBuilder {
 	b.name = name
 	return b
 }
 
-// Type sets the type of the admission webhook
-// This is required
-func (b *WebhookBuilder) Type(t types.WebhookType) *WebhookBuilder {
-	b.t = &t
+// Mutating sets the type to mutating admission webhook
+// Only one of Mutating and Validating can be invoked.
+func (b *WebhookBuilder) Mutating() *WebhookBuilder {
+	m := types.WebhookTypeMutating
+	b.t = &m
 	return b
 }
 
-// Path sets the Path for the webhook.
-// This is optional
+// Validating sets the type to validating admission webhook
+// Only one of Mutating and Validating can be invoked.
+func (b *WebhookBuilder) Validating() *WebhookBuilder {
+	m := types.WebhookTypeValidating
+	b.t = &m
+	return b
+}
+
+// Path sets the path for the webhook.
+// Path needs to be unique among different webhooks.
+// This is optional. If not set, it will be built from the type and resource name.
+// For example, a webhook that mutates pods has a default path of "/mutate-pods"
+// If the defaulting logic can't find a unique path for it, user need to set it manually.
 func (b *WebhookBuilder) Path(path string) *WebhookBuilder {
 	b.path = path
 	return b
@@ -96,7 +115,7 @@ func (b *WebhookBuilder) Operations(ops ...admissionregistrationv1beta1.Operatio
 }
 
 // ForType sets the type of resources that the webhook will operate.
-// This cannot be use with Rules.
+// It will be overridden by Rules if Rules are not empty.
 func (b *WebhookBuilder) ForType(obj runtime.Object) *WebhookBuilder {
 	b.apiType = obj
 	return b
@@ -104,7 +123,7 @@ func (b *WebhookBuilder) ForType(obj runtime.Object) *WebhookBuilder {
 
 // Rules sets the RuleWithOperations for the webhook.
 // It overrides ForType and Operations.
-// This is optional and for advanced user
+// This is optional and for advanced user.
 func (b *WebhookBuilder) Rules(rules ...admissionregistrationv1beta1.RuleWithOperations) *WebhookBuilder {
 	b.rules = rules
 	return b
@@ -125,7 +144,7 @@ func (b *WebhookBuilder) NamespaceSelector(namespaceSelector *metav1.LabelSelect
 	return b
 }
 
-// WithManager set the manager for the webhook for provisioning client etc.
+// WithManager set the manager for the webhook for provisioning various dependencies. e.g. client etc.
 func (b *WebhookBuilder) WithManager(mgr manager.Manager) *WebhookBuilder {
 	b.manager = mgr
 	return b
@@ -165,48 +184,39 @@ func (b *WebhookBuilder) Build() (*admission.Webhook, error) {
 		Handlers:          b.handlers,
 	}
 
-	if len(b.path) == 0 {
-		if *b.t == types.WebhookTypeMutating {
-			b.path = "/mutatingwebhook"
-		} else if *b.t == types.WebhookTypeValidating {
-			b.path = "/validatingwebhook"
-		}
-	}
-	w.Path = b.path
-
 	if b.rules != nil {
 		w.Rules = b.rules
-		return w, nil
-	}
+	} else {
+		if b.manager == nil {
+			return nil, errors.New("manager should be set using WithManager")
+		}
+		gvk, err := apiutil.GVKForObject(b.apiType, b.manager.GetScheme())
+		if err != nil {
+			return nil, err
+		}
+		mapper := b.manager.GetRESTMapper()
+		mapping, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
+		if err != nil {
+			return nil, err
+		}
 
-	if b.manager == nil {
-		return nil, errors.New("manager should be set using WithManager")
-	}
-	gvk, err := apiutil.GVKForObject(b.apiType, b.manager.GetScheme())
-	if err != nil {
-		return nil, err
-	}
-	mapper := b.manager.GetRESTMapper()
-	mapping, err := mapper.RESTMapping(gvk.GroupKind(), gvk.Version)
-	if err != nil {
-		return nil, err
-	}
-
-	if b.operations == nil {
-		b.operations = []admissionregistrationv1beta1.OperationType{
-			admissionregistrationv1beta1.Create,
-			admissionregistrationv1beta1.Update,
+		if b.operations == nil {
+			b.operations = []admissionregistrationv1beta1.OperationType{
+				admissionregistrationv1beta1.Create,
+				admissionregistrationv1beta1.Update,
+			}
+		}
+		w.Rules = []admissionregistrationv1beta1.RuleWithOperations{
+			{
+				Operations: b.operations,
+				Rule: admissionregistrationv1beta1.Rule{
+					APIGroups:   []string{gvk.Group},
+					APIVersions: []string{gvk.Version},
+					Resources:   []string{mapping.Resource.Resource},
+				},
+			},
 		}
 	}
-	w.Rules = []admissionregistrationv1beta1.RuleWithOperations{
-		{
-			Operations: b.operations,
-			Rule: admissionregistrationv1beta1.Rule{
-				APIGroups:   []string{gvk.Group},
-				APIVersions: []string{gvk.Version},
-				Resources:   []string{mapping.Resource},
-			},
-		},
-	}
+
 	return w, nil
 }
