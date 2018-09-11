@@ -40,9 +40,12 @@ func mutatePodsFn(ctx context.Context, pod *corev1.Pod) error {
 	if !ok {
 		return fmt.Errorf("the value associated with %v is expected to be a string", "foo")
 	}
-	anno := pod.GetAnnotations()
+	anno := pod.Annotations
+	if anno == nil {
+		anno = map[string]string{}
+	}
 	anno["example-mutating-admission-webhook"] = v
-	pod.SetAnnotations(anno)
+	pod.Annotations = anno
 	return nil
 }
 

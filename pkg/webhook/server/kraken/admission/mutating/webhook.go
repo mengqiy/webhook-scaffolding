@@ -20,7 +20,6 @@ import (
 	creaturesv1alpha1 "github.com/mengqiy/example-crd-apis/pkg/apis/creatures/v1alpha1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/types"
 )
 
 var Builder *builder.WebhookBuilder
@@ -28,8 +27,7 @@ var Builder *builder.WebhookBuilder
 func init() {
 	Builder = builder.NewWebhookBuilder().
 		Name("mutatingkrakens.k8s.io").
-		Type(types.WebhookTypeMutating).
-		Path("/mutating-krakens").
+		Mutating().
 		Operations(admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update).
 		ForType(&creaturesv1alpha1.Kraken{}).
 		Handlers(&Handler{})

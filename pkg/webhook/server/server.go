@@ -17,13 +17,27 @@ limitations under the License.
 package server
 
 import (
+	"fmt"
+
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
 )
 
-var webhookBuilders []*builder.WebhookBuilder
+var (
+	log             = logf.Log.WithName("server")
+	webhookBuilders []*builder.WebhookBuilder
+	kvMap           map[string]interface{}
+)
+
+func AddToKVMap(k string, v interface{}) {
+	if _, found := kvMap[k]; found {
+		log.Error(fmt.Errorf("key %q already exist in the KVMap: %v", k, kvMap),
+			"failed to add key-value pair in KVMap")
+	}
+}
 
 func Add(mgr manager.Manager) error {
 	return add(mgr, webhookBuilders)
@@ -34,7 +48,7 @@ func add(mgr manager.Manager, builders []*builder.WebhookBuilder) error {
 	svr, err := webhook.NewServer("foo-admission-server", mgr, webhook.ServerOptions{
 		Port:    9876,
 		CertDir: "/tmp/cert",
-		KVMap:   map[string]interface{}{"foo": "bar"},
+		KVMap:   kvMap,
 		BootstrapOptions: &webhook.BootstrapOptions{
 			Secret: &types.NamespacedName{
 				Namespace: "default",

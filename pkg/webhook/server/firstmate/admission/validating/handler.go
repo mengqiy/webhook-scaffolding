@@ -40,7 +40,7 @@ func validateFirstMateFn(ctx context.Context, fm *crewv1alpha1.Firstmate) (bool,
 	return true, "", nil
 }
 
-// Handler validates Pods
+// Handler validates Firstmates
 type Handler struct {
 	Client  client.Client
 	Decoder types.Decoder
@@ -49,11 +49,10 @@ type Handler struct {
 // Implement admission.Handler so the controller can handle admission request.
 var _ admission.Handler = &Handler{}
 
-// Handler admits a pod iff a specific annotation exists.
-func (v *Handler) Handle(ctx context.Context, req types.Request) types.Response {
+func (h *Handler) Handle(ctx context.Context, req types.Request) types.Response {
 	fm := &crewv1alpha1.Firstmate{}
 
-	err := v.Decoder.Decode(req, fm)
+	err := h.Decoder.Decode(req, fm)
 	if err != nil {
 		return admission.ErrorResponse(http.StatusBadRequest, err)
 	}

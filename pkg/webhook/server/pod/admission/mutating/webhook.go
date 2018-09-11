@@ -20,7 +20,6 @@ import (
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/types"
 )
 
 var Builder *builder.WebhookBuilder
@@ -28,8 +27,7 @@ var Builder *builder.WebhookBuilder
 func init() {
 	Builder = builder.NewWebhookBuilder().
 		Name("mutatingpods.k8s.io").
-		Type(types.WebhookTypeMutating).
-		Path("/mutating-pods").
+		Mutating().
 		Operations(admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update).
 		ForType(&corev1.Pod{}).
 		Handlers(&Handler{})

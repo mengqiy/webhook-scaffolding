@@ -20,7 +20,6 @@ import (
 	crewv1alpha1 "github.com/mengqiy/webhook-scaffolding/pkg/apis/crew/v1alpha1"
 	admissionregistrationv1beta1 "k8s.io/api/admissionregistration/v1beta1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
-	"sigs.k8s.io/controller-runtime/pkg/webhook/types"
 )
 
 var Builder *builder.WebhookBuilder
@@ -28,8 +27,7 @@ var Builder *builder.WebhookBuilder
 func init() {
 	Builder = builder.NewWebhookBuilder().
 		Name("mutatingfirstmates.k8s.io").
-		Type(types.WebhookTypeMutating).
-		Path("/mutating-firstmates").
+		Mutating().
 		Operations(admissionregistrationv1beta1.Create, admissionregistrationv1beta1.Update).
 		ForType(&crewv1alpha1.Firstmate{}).
 		Handlers(&Handler{})

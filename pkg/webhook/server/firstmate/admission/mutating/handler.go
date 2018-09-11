@@ -28,13 +28,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/types"
 )
 
-// Handler annotates Pods
+// Handler mutates .spec.foo field
 type Handler struct {
 	Client  client.Client
 	Decoder types.Decoder
 }
 
-// mutateFirstMateFn add an annotation to the given pod
 func mutateFirstMateFn(ctx context.Context, fm *crewv1alpha1.Firstmate) error {
 	v, ok := ctx.Value(admission.StringKey("foo")).(string)
 	if !ok {

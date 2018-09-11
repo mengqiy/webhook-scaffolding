@@ -22,6 +22,7 @@ import (
 	"github.com/mengqiy/webhook-scaffolding/pkg/apis"
 	"github.com/mengqiy/webhook-scaffolding/pkg/controller"
 	"github.com/mengqiy/webhook-scaffolding/pkg/webhook"
+	"github.com/mengqiy/webhook-scaffolding/pkg/webhook/server"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
@@ -59,6 +60,7 @@ func main() {
 	if err := webhook.AddToManager(mgr); err != nil {
 		log.Fatal(err)
 	}
+	server.AddToKVMap("foo", "bar")
 
 	log.Printf("Starting the Cmd.")
 
