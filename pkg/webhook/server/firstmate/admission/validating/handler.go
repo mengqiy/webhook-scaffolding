@@ -18,7 +18,6 @@ package validating
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	crewv1alpha1 "github.com/mengqiy/webhook-scaffolding/pkg/apis/crew/v1alpha1"
@@ -29,12 +28,7 @@ import (
 )
 
 func validateFirstMateFn(ctx context.Context, fm *crewv1alpha1.Firstmate) (bool, string, error) {
-	v, ok := ctx.Value(admission.StringKey("foo")).(string)
-	if !ok {
-		return false, "",
-			fmt.Errorf("the value associated with key %q is expected to be a string", v)
-	}
-	if fm.Spec.Foo != v {
+	if fm.Spec.Foo != "bar" {
 		return false, "can't find desired value with spec.foo", nil
 	}
 	return true, "", nil

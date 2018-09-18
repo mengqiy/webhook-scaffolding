@@ -24,7 +24,7 @@ install: manifests
 deploy: manifests
 	kubectl apply -f config/crds
 	kubectl apply -f manifests/
-	# kustomize build config/default | kubectl apply -f -
+	kustomize build config/default | kubectl apply -f -
 
 # Generate manifests e.g. CRD, RBAC etc.
 manifests:

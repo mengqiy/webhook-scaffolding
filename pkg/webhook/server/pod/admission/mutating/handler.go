@@ -18,7 +18,6 @@ package mutating
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	corev1 "k8s.io/api/core/v1"
@@ -36,16 +35,10 @@ type Handler struct {
 
 // mutatePodsFn add an annotation to the given pod
 func mutatePodsFn(ctx context.Context, pod *corev1.Pod) error {
-	v, ok := ctx.Value(admission.StringKey("foo")).(string)
-	if !ok {
-		return fmt.Errorf("the value associated with %v is expected to be a string", "foo")
+	if pod.Annotations == nil {
+		pod.Annotations = map[string]string{}
 	}
-	anno := pod.Annotations
-	if anno == nil {
-		anno = map[string]string{}
-	}
-	anno["example-mutating-admission-webhook"] = v
-	pod.Annotations = anno
+	pod.Annotations["example-mutating-admission-webhook"] = "foo"
 	return nil
 }
 

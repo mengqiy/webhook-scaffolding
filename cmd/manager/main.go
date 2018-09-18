@@ -16,54 +16,66 @@ limitations under the License.
 package main
 
 import (
-	"log"
+	"flag"
+	"os"
 
 	externalapis "github.com/mengqiy/example-crd-apis/pkg/apis"
 	"github.com/mengqiy/webhook-scaffolding/pkg/apis"
 	"github.com/mengqiy/webhook-scaffolding/pkg/controller"
 	"github.com/mengqiy/webhook-scaffolding/pkg/webhook"
-	"github.com/mengqiy/webhook-scaffolding/pkg/webhook/server"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
 )
 
+var log = logf.Log.WithName("example-controller")
+
 func main() {
+	flag.Parse()
+	logf.SetLogger(logf.ZapLogger(false))
+	entryLog := log.WithName("entrypoint")
+
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
 	if err != nil {
-		log.Fatal(err)
+		entryLog.Error(err, "unable to set up client config")
+		os.Exit(1)
 	}
 
 	// Create a new Cmd to provide shared dependencies and start components
 	mgr, err := manager.New(cfg, manager.Options{})
 	if err != nil {
-		log.Fatal(err)
+		entryLog.Error(err, "unable to set up overall controller manager")
+		os.Exit(1)
 	}
 
-	log.Printf("Registering Components.")
+	log.Info("Registering Components.")
 
 	// Setup Scheme for all resources
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatal(err)
+		entryLog.Error(err, "unable add APIs to scheme")
+		os.Exit(1)
 	}
 	if err := externalapis.AddToScheme(mgr.GetScheme()); err != nil {
-		log.Fatal(err)
+		entryLog.Error(err, "unable add external APIs to scheme")
+		os.Exit(1)
 	}
 
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr); err != nil {
-		log.Fatal(err)
+		entryLog.Error(err, "unable to register controllers to the manager")
+		os.Exit(1)
 	}
 
 	if err := webhook.AddToManager(mgr); err != nil {
-		log.Fatal(err)
+		entryLog.Error(err, "unable to register webhooks to the manager")
+		os.Exit(1)
 	}
-	server.AddToKVMap("foo", "bar")
 
-	log.Printf("Starting the Cmd.")
+	log.Info("Starting the Cmd.")
 
 	// Start the Cmd
-	log.Fatal(mgr.Start(signals.SetupSignalHandler()))
+	log.Error(mgr.Start(signals.SetupSignalHandler()), "unable to run manager")
 }

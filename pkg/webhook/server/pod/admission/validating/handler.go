@@ -35,22 +35,16 @@ type Handler struct {
 }
 
 func (h *Handler) validatePodsFn(ctx context.Context, pod *corev1.Pod) (bool, string, error) {
-	v, ok := ctx.Value(admission.StringKey("foo")).(string)
-	if !ok {
-		return false, "",
-			fmt.Errorf("the value associated with key %q is expected to be a string", v)
-	}
-	annotations := pod.GetAnnotations()
 	key := "example-mutating-admission-webhook"
-	anno, found := annotations[key]
+	anno, found := pod.Annotations[key]
 	switch {
 	case !found:
 		return found, fmt.Sprintf("failed to find annotation with key: %q", key), nil
-	case found && anno == v:
+	case found && anno == "foo":
 		return found, "", nil
-	case found && anno != v:
+	case found && anno != "foo":
 		return false,
-			fmt.Sprintf("the value associate with key %q is expected to be %q, but got %q", "foo", v, anno), nil
+			fmt.Sprintf("the value associate with key %q is expected to be %q, but got %q", "foo", "foo", anno), nil
 	}
 	return false, "", nil
 }

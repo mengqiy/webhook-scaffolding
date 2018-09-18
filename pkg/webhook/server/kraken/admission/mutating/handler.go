@@ -44,12 +44,10 @@ func (h *Handler) mutateKrakenFn(ctx context.Context, k *creaturesv1alpha1.Krake
 	}
 
 	v := firstmate.Spec.Foo
-	anno := k.GetAnnotations()
-	if anno == nil {
-		anno = map[string]string{}
+	if k.Annotations == nil {
+		k.Annotations = map[string]string{}
 	}
-	anno["foo"] = v + v
-	k.SetAnnotations(anno)
+	k.Annotations["foo"] = v + v
 	return nil
 }
 
@@ -57,6 +55,7 @@ func (h *Handler) mutateKrakenFn(ctx context.Context, k *creaturesv1alpha1.Krake
 var _ admission.Handler = &Handler{}
 
 // Mutator changes a field in a CR.
+// +kubebuilder:rbac:groups=crew,resources=firstmates,verbs=get;list;watch;create;update;patch;delete
 func (h *Handler) Handle(ctx context.Context, req types.Request) types.Response {
 	k := &creaturesv1alpha1.Kraken{}
 

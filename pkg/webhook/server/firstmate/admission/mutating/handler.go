@@ -18,7 +18,6 @@ package mutating
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	crewv1alpha1 "github.com/mengqiy/webhook-scaffolding/pkg/apis/crew/v1alpha1"
@@ -35,11 +34,7 @@ type Handler struct {
 }
 
 func mutateFirstMateFn(ctx context.Context, fm *crewv1alpha1.Firstmate) error {
-	v, ok := ctx.Value(admission.StringKey("foo")).(string)
-	if !ok {
-		return fmt.Errorf("the value associated with %v is expected to be a string", "foo")
-	}
-	fm.Spec.Foo = v
+	fm.Spec.Foo = "bar"
 	return nil
 }
 

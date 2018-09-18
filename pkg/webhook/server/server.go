@@ -17,8 +17,6 @@ limitations under the License.
 package server
 
 import (
-	"fmt"
-
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
@@ -29,15 +27,7 @@ import (
 var (
 	log             = logf.Log.WithName("server")
 	webhookBuilders []*builder.WebhookBuilder
-	kvMap           map[string]interface{}
 )
-
-func AddToKVMap(k string, v interface{}) {
-	if _, found := kvMap[k]; found {
-		log.Error(fmt.Errorf("key %q already exist in the KVMap: %v", k, kvMap),
-			"failed to add key-value pair in KVMap")
-	}
-}
 
 func Add(mgr manager.Manager) error {
 	return add(mgr, webhookBuilders)
@@ -46,17 +36,17 @@ func Add(mgr manager.Manager) error {
 // add adds a new Controller to mgr with r as the reconcile.Reconciler
 func add(mgr manager.Manager, builders []*builder.WebhookBuilder) error {
 	svr, err := webhook.NewServer("foo-admission-server", mgr, webhook.ServerOptions{
+		// TODO(user): change the configuration of ServerOptions based on your need.
 		Port:    9876,
 		CertDir: "/tmp/cert",
-		KVMap:   kvMap,
 		BootstrapOptions: &webhook.BootstrapOptions{
 			Secret: &types.NamespacedName{
-				Namespace: "default",
+				Namespace: "system",
 				Name:      "foo-admission-server-secret",
 			},
 
 			Service: &webhook.Service{
-				Namespace: "default",
+				Namespace: "system",
 				Name:      "foo-admission-server-service",
 				// Selectors should select the pods that runs this webhook server.
 				Selectors: map[string]string{

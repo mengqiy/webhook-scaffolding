@@ -21,6 +21,6 @@ import (
 )
 
 func init() {
-	// AddToManagerFuncs is a list of functions to create controllers and add them to a manager.
+	// AddToManagerFuncs is a list of functions to create webhook server and add them to a manager.
 	AddToManagerFuncs = append(AddToManagerFuncs, server.Add)
 }
