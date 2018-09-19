@@ -21,9 +21,9 @@ required = [
 
 # STANZAS BELOW ARE GENERATED AND MAY BE WRITTEN - DO NOT MODIFY BELOW THIS LINE.
 
-[[constraint]]
+[[override]]
+  branch="master"
   name="sigs.k8s.io/controller-runtime"
-  version="v0.1.1"
 
 [[constraint]]
   name="sigs.k8s.io/controller-tools"
