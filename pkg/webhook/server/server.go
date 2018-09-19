@@ -21,20 +21,17 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission/builder"
 )
 
 var (
 	log             = logf.Log.WithName("server")
 	webhookBuilders []*builder.WebhookBuilder
+	ListOfHandlers  [][]admission.Handler
 )
 
 func Add(mgr manager.Manager) error {
-	return add(mgr, webhookBuilders)
-}
-
-// add adds a new Controller to mgr with r as the reconcile.Reconciler
-func add(mgr manager.Manager, builders []*builder.WebhookBuilder) error {
 	svr, err := webhook.NewServer("foo-admission-server", mgr, webhook.ServerOptions{
 		// TODO(user): change the configuration of ServerOptions based on your need.
 		Port:    9876,
@@ -59,9 +56,12 @@ func add(mgr manager.Manager, builders []*builder.WebhookBuilder) error {
 		return err
 	}
 
-	webhooks := make([]webhook.Webhook, len(builders))
-	for i, builder := range builders {
-		wh, err := builder.WithManager(mgr).Build()
+	webhooks := make([]webhook.Webhook, len(webhookBuilders))
+	for i, builder := range webhookBuilders {
+		wh, err := builder.
+			Handlers(ListOfHandlers[i]...).
+			WithManager(mgr).
+			Build()
 		if err != nil {
 			return err
 		}

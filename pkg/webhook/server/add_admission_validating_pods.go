@@ -22,4 +22,5 @@ import (
 
 func init() {
 	webhookBuilders = append(webhookBuilders, validating.Builder)
+	ListOfHandlers = append(ListOfHandlers, validating.Handlers)
 }

@@ -14,13 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package server
+package mutating
 
 import (
-	"github.com/mengqiy/webhook-scaffolding/pkg/webhook/server/pod/admission/mutating"
+	"github.com/mengqiy/webhook-scaffolding/pkg/webhook/server/pod/admission/mutating/featurefoo"
 )
 
 func init() {
-	webhookBuilders = append(webhookBuilders, mutating.Builder)
-	ListOfHandlers = append(ListOfHandlers, mutating.Handlers)
+	Handlers = append(Handlers, &featurefoo.Handler{})
 }

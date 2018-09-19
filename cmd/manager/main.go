@@ -17,25 +17,36 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
+	"strings"
 
 	externalapis "github.com/mengqiy/example-crd-apis/pkg/apis"
 	"github.com/mengqiy/webhook-scaffolding/pkg/apis"
 	"github.com/mengqiy/webhook-scaffolding/pkg/controller"
 	"github.com/mengqiy/webhook-scaffolding/pkg/webhook"
+	"github.com/mengqiy/webhook-scaffolding/pkg/webhook/server"
+	"k8s.io/apimachinery/pkg/util/sets"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"sigs.k8s.io/controller-runtime/pkg/client/config"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 	logf "sigs.k8s.io/controller-runtime/pkg/runtime/log"
 	"sigs.k8s.io/controller-runtime/pkg/runtime/signals"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
 
 var log = logf.Log.WithName("example-controller")
 
 func main() {
+	var disabledFeatures string
+	flag.StringVar(&disabledFeatures, "disabled-features", "", "example usage")
 	flag.Parse()
+
 	logf.SetLogger(logf.ZapLogger(false))
 	entryLog := log.WithName("entrypoint")
+
+	disabled := strings.Split(disabledFeatures, ",")
+	log.Info(fmt.Sprintf("the following features are disabled: %v", disabled))
 
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
@@ -63,6 +74,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	filter(disabled)
+
 	// Setup all Controllers
 	if err := controller.AddToManager(mgr); err != nil {
 		entryLog.Error(err, "unable to register controllers to the manager")
@@ -78,4 +91,18 @@ func main() {
 
 	// Start the Cmd
 	log.Error(mgr.Start(signals.SetupSignalHandler()), "unable to run manager")
+}
+
+func filter(disabledFeatures []string) {
+	set := sets.NewString(disabledFeatures...)
+	for i := range server.ListOfHandlers {
+		var filteredHandlers []admission.Handler
+		for j, handler := range server.ListOfHandlers[i] {
+			if namedHandler, ok := handler.(admission.NameGetter); ok && set.Has(namedHandler.Name()) {
+				continue
+			}
+			filteredHandlers = append(filteredHandlers, server.ListOfHandlers[i][j])
+		}
+		server.ListOfHandlers[i] = filteredHandlers
+	}
 }

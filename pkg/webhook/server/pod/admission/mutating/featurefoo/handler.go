@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package mutating
+package featurefoo
 
 import (
 	"context"
@@ -38,7 +38,7 @@ func mutatePodsFn(ctx context.Context, pod *corev1.Pod) error {
 	if pod.Annotations == nil {
 		pod.Annotations = map[string]string{}
 	}
-	pod.Annotations["example-mutating-admission-webhook"] = "foo"
+	pod.Annotations["featurefoo"] = "foo"
 	return nil
 }
 
@@ -60,6 +60,12 @@ func (m *Handler) Handle(ctx context.Context, req types.Request) types.Response 
 		return admission.ErrorResponse(http.StatusInternalServerError, err)
 	}
 	return admission.PatchResponse(pod, copy)
+}
+
+var _ admission.NameGetter = &Handler{}
+
+func (h *Handler) Name() string {
+	return "featurefoo"
 }
 
 var _ inject.Client = &Handler{}

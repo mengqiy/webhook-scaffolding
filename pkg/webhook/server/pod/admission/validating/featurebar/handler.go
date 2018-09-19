@@ -14,11 +14,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package validating
+package featurebar
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	corev1 "k8s.io/api/core/v1"
@@ -35,18 +34,19 @@ type Handler struct {
 }
 
 func (h *Handler) validatePodsFn(ctx context.Context, pod *corev1.Pod) (bool, string, error) {
-	key := "example-mutating-admission-webhook"
-	anno, found := pod.Annotations[key]
-	switch {
-	case !found:
-		return found, fmt.Sprintf("failed to find annotation with key: %q", key), nil
-	case found && anno == "foo":
-		return found, "", nil
-	case found && anno != "foo":
-		return false,
-			fmt.Sprintf("the value associate with key %q is expected to be %q, but got %q", "foo", "foo", anno), nil
-	}
-	return false, "", nil
+	//key := "example-mutating-admission-webhook"
+	//anno, found := pod.Annotations[key]
+	//switch {
+	//case !found:
+	//	return found, fmt.Sprintf("failed to find annotation with key: %q", key), nil
+	//case found && anno == "foo":
+	//	return found, "", nil
+	//case found && anno != "foo":
+	//	return false,
+	//		fmt.Sprintf("the value associate with key %q is expected to be %q, but got %q", "foo", "foo", anno), nil
+	//}
+	//return false, "", nil
+	return true, "", nil
 }
 
 // Implement admission.Handler so the controller can handle admission request.
