@@ -22,8 +22,9 @@ required = [
 # STANZAS BELOW ARE GENERATED AND MAY BE WRITTEN - DO NOT MODIFY BELOW THIS LINE.
 
 [[override]]
-  branch="master"
+  branch="disable_knob"
   name="sigs.k8s.io/controller-runtime"
+  source="github.com/mengqiy/controller-runtime"
 
 [[constraint]]
   name="sigs.k8s.io/controller-tools"

@@ -760,8 +760,8 @@
   revision = "e3762e86a74c878ffed47484592986685639c2cd"
 
 [[projects]]
-  branch = "master"
-  digest = "1:677fb95b07f3d6a76c93a92ff9fb29bf5c60df52fbfee16e444fe0ab87daca41"
+  branch = "disable_knob"
+  digest = "1:98c480465d3bb436a45101b8e7de6dcb48902f853d2131e874ddfb51011bd0d9"
   name = "sigs.k8s.io/controller-runtime"
   packages = [
     "pkg/cache",
@@ -799,7 +799,8 @@
     "pkg/webhook/types",
   ]
   pruneopts = "T"
-  revision = "0f4719beb7a808238fc471945001154516bda628"
+  revision = "cd9166f9ac08e706d79f9271a24f523c400e513b"
+  source = "github.com/mengqiy/controller-runtime"
 
 [[projects]]
   digest = "1:6dfe024674229af3c6e3791718837798eeada8ea41628e61e31f0774ffea41b3"
@@ -833,7 +834,6 @@
   input-imports = [
     "github.com/emicklei/go-restful",
     "github.com/mengqiy/example-crd-apis/pkg/apis",
-    "github.com/mengqiy/example-crd-apis/pkg/apis/creatures/v1alpha1",
     "github.com/onsi/ginkgo",
     "github.com/onsi/gomega",
     "golang.org/x/net/context",
@@ -844,6 +844,7 @@
     "k8s.io/apimachinery/pkg/runtime",
     "k8s.io/apimachinery/pkg/runtime/schema",
     "k8s.io/apimachinery/pkg/types",
+    "k8s.io/apimachinery/pkg/util/sets",
     "k8s.io/client-go/kubernetes/scheme",
     "k8s.io/client-go/plugin/pkg/client/auth/gcp",
     "k8s.io/client-go/rest",
@@ -855,6 +856,7 @@
     "sigs.k8s.io/controller-runtime/pkg/handler",
     "sigs.k8s.io/controller-runtime/pkg/manager",
     "sigs.k8s.io/controller-runtime/pkg/runtime/inject",
+    "sigs.k8s.io/controller-runtime/pkg/runtime/log",
     "sigs.k8s.io/controller-runtime/pkg/runtime/scheme",
     "sigs.k8s.io/controller-runtime/pkg/runtime/signals",
     "sigs.k8s.io/controller-runtime/pkg/source",
